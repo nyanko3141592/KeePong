@@ -11,14 +11,13 @@ struct ARSceneView: UIViewRepresentable {
         sceneView.delegate = context.coordinator
         sceneView.autoenablesDefaultLighting = true
         sceneView.showsStatistics = true
-        sceneView.scene.physicsWorld.contactDelegate = context.coordinator // set the contact delegate
 
         // add play button
         let playbutton = UIButton(type: .system)
         playbutton.backgroundColor = .blue
         playbutton.setTitle("Play", for: .normal)
         playbutton.setTitleColor(.white, for: .normal)
-        playbutton.titleLabel?.font = UIFont.boldSystemFont(ofSize: 24)
+        playbutton.titleLabel?.font = UIFont.boldSystemFont(ofSize: 30)
         playbutton.layer.cornerRadius = 15
         playbutton.contentEdgeInsets = UIEdgeInsets(top: 12, left: 32, bottom: 12, right: 32)
         playbutton.addTarget(context.coordinator, action: #selector(Coordinator.moveBallAboveracket), for: .touchUpInside)
@@ -28,7 +27,7 @@ struct ARSceneView: UIViewRepresentable {
         // add stopwatch label
         let stopwatchLabel = UILabel()
         stopwatchLabel.textColor = .white
-        stopwatchLabel.font = UIFont.systemFont(ofSize: 20)
+        stopwatchLabel.font = UIFont.systemFont(ofSize: 30)
         stopwatchLabel.textAlignment = .center
         stopwatchLabel.translatesAutoresizingMaskIntoConstraints = false
         sceneView.addSubview(stopwatchLabel)
@@ -53,7 +52,7 @@ struct ARSceneView: UIViewRepresentable {
         context.coordinator.setupracket(sceneView: uiView)
     }
 
-    class Coordinator: NSObject, ARSCNViewDelegate, SCNPhysicsContactDelegate {
+    class Coordinator: NSObject, ARSCNViewDelegate, SCNPhysicsContactDelegate, SCNSceneRendererDelegate {
         var sceneView: ARSceneView
         var racketNode: SCNNode!
         let ballRadius: CGFloat = 0.1
@@ -61,6 +60,7 @@ struct ARSceneView: UIViewRepresentable {
         var stopwatchLabel: UILabel! // label to display the stopwatch time
         var stopwatchTimer: Timer? // timer for the stopwatch
         var elapsedSeconds: Int = 0 // number of seconds elapsed on the stopwatch
+        var isBallDropped: Bool = false // flag to indicate if the ball has been dropped
 
         init(_ sceneView: ARSceneView) {
             self.sceneView = sceneView
@@ -94,7 +94,26 @@ struct ARSceneView: UIViewRepresentable {
             sceneView.scene.rootNode.addChildNode(groundNode)
         }
 
+        func ballDropped() {
+            // Stop the stopwatch
+            stopwatchTimer?.invalidate()
+            stopwatchTimer = nil
+
+            // Reset the elapsed time and update the stopwatch label
+            elapsedSeconds = 0
+            updateStopwatchLabel()
+
+            // Remove the ball from the scene
+            ballNode.removeFromParentNode()
+
+            // Show an alert message
+            let alertController = UIAlertController(title: "Game Over", message: "You dropped the ball!", preferredStyle: .alert)
+            alertController.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+            UIApplication.shared.windows.first?.rootViewController?.present(alertController, animated: true, completion: nil)
+        }
+
         @objc func moveBallAboveracket() {
+            print("move ball above")
             // Check if ballNode is not nil before removing it from the parent node
             if ballNode != nil {
                 ballNode.removeFromParentNode()
@@ -119,6 +138,11 @@ struct ARSceneView: UIViewRepresentable {
             stopwatchTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
                 self.elapsedSeconds += 1
                 self.updateStopwatchLabel()
+                // Check if the ball has dropped
+                if self.ballNode.presentation.position.y < self.racketNode.presentation.position.y + 0.2 {
+                    self.stopStopwatch()
+                    print("Ball dropped!")
+                }
             }
         }
 
