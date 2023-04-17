@@ -11,13 +11,14 @@ struct ARSceneView: UIViewRepresentable {
         sceneView.delegate = context.coordinator
         sceneView.autoenablesDefaultLighting = true
         sceneView.showsStatistics = true
+        sceneView.scene.physicsWorld.contactDelegate = context.coordinator // set the contact delegate
 
         // add play button
         let playbutton = UIButton(type: .system)
-        playbutton.backgroundColor = .systemRed
+        playbutton.backgroundColor = .blue
         playbutton.setTitle("Play", for: .normal)
         playbutton.setTitleColor(.white, for: .normal)
-        playbutton.titleLabel?.font = UIFont.boldSystemFont(ofSize: 30)
+        playbutton.titleLabel?.font = UIFont.boldSystemFont(ofSize: 24)
         playbutton.layer.cornerRadius = 15
         playbutton.contentEdgeInsets = UIEdgeInsets(top: 12, left: 32, bottom: 12, right: 32)
         playbutton.addTarget(context.coordinator, action: #selector(Coordinator.moveBallAboveracket), for: .touchUpInside)
@@ -27,7 +28,7 @@ struct ARSceneView: UIViewRepresentable {
         // add stopwatch label
         let stopwatchLabel = UILabel()
         stopwatchLabel.textColor = .white
-        stopwatchLabel.font = UIFont.systemFont(ofSize: 30)
+        stopwatchLabel.font = UIFont.systemFont(ofSize: 20)
         stopwatchLabel.textAlignment = .center
         stopwatchLabel.translatesAutoresizingMaskIntoConstraints = false
         sceneView.addSubview(stopwatchLabel)
@@ -52,7 +53,7 @@ struct ARSceneView: UIViewRepresentable {
         context.coordinator.setupracket(sceneView: uiView)
     }
 
-    class Coordinator: NSObject, ARSCNViewDelegate {
+    class Coordinator: NSObject, ARSCNViewDelegate, SCNPhysicsContactDelegate {
         var sceneView: ARSceneView
         var racketNode: SCNNode!
         let ballRadius: CGFloat = 0.1
@@ -78,6 +79,19 @@ struct ARSceneView: UIViewRepresentable {
             let racketPhysicsBody = SCNPhysicsBody(type: .kinematic, shape: SCNPhysicsShape(node: racketNode))
             racketNode.physicsBody = racketPhysicsBody
             racketNode.name = "racket"
+
+            // Create a transparent ground
+            let groundGeometry = SCNPlane(width: 5, height: 5)
+            let groundMaterial = SCNMaterial()
+            groundMaterial.diffuse.contents = UIColor.clear
+            groundGeometry.materials = [groundMaterial]
+            let groundNode = SCNNode(geometry: groundGeometry)
+            groundNode.eulerAngles = SCNVector3(GLKMathDegreesToRadians(270), 0, 0)
+            groundNode.position = SCNVector3(0, -2, -1)
+            let groundPhysicsBody = SCNPhysicsBody(type: .static, shape: SCNPhysicsShape(geometry: groundGeometry, options: nil))
+            groundNode.physicsBody = groundPhysicsBody
+            groundNode.name = "ground"
+            sceneView.scene.rootNode.addChildNode(groundNode)
         }
 
         @objc func moveBallAboveracket() {
@@ -111,7 +125,21 @@ struct ARSceneView: UIViewRepresentable {
         func updateStopwatchLabel() {
             let minutes = elapsedSeconds / 60
             let seconds = elapsedSeconds % 60
-            stopwatchLabel.text = "TIME: " + String(format: "%02d:%02d", minutes, seconds)
+            stopwatchLabel.text = String(format: "%02d:%02d", minutes, seconds)
+        }
+
+        // Physics contact delegate method to detect when the ball is dropped
+        func physicsWorld(_ world: SCNPhysicsWorld, didBegin contact: SCNPhysicsContact) {
+            if contact.nodeA.name == "ball", contact.nodeB.name == "ground" {
+                stopStopwatch()
+            } else if contact.nodeA.name == "ground", contact.nodeB.name == "ball" {
+                stopStopwatch()
+            }
+        }
+
+        func stopStopwatch() {
+            stopwatchTimer?.invalidate()
+            stopwatchTimer = nil
         }
     }
 }
