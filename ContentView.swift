@@ -75,12 +75,11 @@ struct ARSceneView: UIViewRepresentable {
             let ballGeometry = SCNSphere(radius: ballRadius)
             ballGeometry.firstMaterial?.diffuse.contents = UIColor.white
             ballNode = SCNNode(geometry: ballGeometry)
-            ballNode.position = SCNVector3(0, 0.2, -0.3) // Set the z-coordinate of the ball to -0.03
-            racketNode.addChildNode(ballNode)
-
-            // Enable physics on the new ball node
             let ballPhysicsBody = SCNPhysicsBody(type: .dynamic, shape: SCNPhysicsShape(geometry: ballGeometry, options: nil))
+            ballPhysicsBody.restitution = 0.8 // Set the ball's bounciness
             ballNode.physicsBody = ballPhysicsBody
+            ballNode.position = SCNVector3(0, 0.1, -0.3) // Set the z-coordinate of the ball to -0.03
+            racketNode.addChildNode(ballNode)
             ballNode.name = "ball"
         }
 
