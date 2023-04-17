@@ -8,20 +8,20 @@ import PackageDescription
 import AppleProductTypes
 
 let package = Package(
-    name: "balanceGameAR",
+    name: "KeepPingPong",
     platforms: [
         .iOS("15.2")
     ],
     products: [
         .iOSApplication(
-            name: "balanceGameAR",
+            name: "KeepPingPong",
             targets: ["AppModule"],
             bundleIdentifier: "naoki.takahashi.balanceGameAR",
             teamIdentifier: "CW97U5J24N",
             displayVersion: "1.0",
             bundleVersion: "1",
-            appIcon: .placeholder(icon: .movieReel),
-            accentColor: .presetColor(.blue),
+            appIcon: .placeholder(icon: .sparkle),
+            accentColor: .presetColor(.teal),
             supportedDeviceFamilies: [
                 .pad,
                 .phone

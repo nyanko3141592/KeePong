@@ -12,11 +12,11 @@ struct ARSceneView: UIViewRepresentable {
         sceneView.autoenablesDefaultLighting = true
         sceneView.showsStatistics = true
 
-        // Add a button to move the ball above the spoon
+        // Add a button to move the ball above the racket
         let button = UIButton(type: .system)
         button.backgroundColor = .blue
-        button.setTitle("Move Ball", for: .normal)
-        button.addTarget(context.coordinator, action: #selector(Coordinator.moveBallAboveSpoon), for: .touchUpInside)
+        button.setTitle("Play", for: .normal)
+        button.addTarget(context.coordinator, action: #selector(Coordinator.moveBallAboveracket), for: .touchUpInside)
         button.translatesAutoresizingMaskIntoConstraints = false
         sceneView.addSubview(button)
 
@@ -33,46 +33,46 @@ struct ARSceneView: UIViewRepresentable {
         let configuration = ARWorldTrackingConfiguration()
         uiView.session.run(configuration)
 
-        context.coordinator.setupSpoon(sceneView: uiView)
+        context.coordinator.setupracket(sceneView: uiView)
     }
 
     class Coordinator: NSObject, ARSCNViewDelegate {
         var sceneView: ARSceneView
-        var spoonNode: SCNNode!
-        let ballRadius: CGFloat = 0.20
+        var racketNode: SCNNode!
+        let ballRadius: CGFloat = 0.1
         var ballNode: SCNNode!
 
         init(_ sceneView: ARSceneView) {
             self.sceneView = sceneView
         }
 
-        func setupSpoon(sceneView: ARSCNView) {
-            let spoon1Scene = try! SCNScene(url: Bundle.main.url(forResource: "spoonModel", withExtension: "usdz")!)
-            spoonNode = spoon1Scene.rootNode.childNodes.first!
+        func setupracket(sceneView: ARSCNView) {
+            let racket1Scene = try! SCNScene(url: Bundle.main.url(forResource: "racket", withExtension: "usdz")!)
+            racketNode = racket1Scene.rootNode.childNodes.first!
 
-            spoonNode.position = SCNVector3(0, -0.3, -0.8)
-            spoonNode.eulerAngles = SCNVector3(GLKMathDegreesToRadians(0), 0, 0)
+            racketNode.position = SCNVector3(0, -0.3, -0.8)
+            racketNode.eulerAngles = SCNVector3(GLKMathDegreesToRadians(0), 0, 0)
 
-            sceneView.pointOfView?.addChildNode(spoonNode)
+            sceneView.pointOfView?.addChildNode(racketNode)
 
-            // Enable physics on the spoon node
-            let spoonPhysicsBody = SCNPhysicsBody(type: .kinematic, shape: SCNPhysicsShape(node: spoonNode))
-            spoonNode.physicsBody = spoonPhysicsBody
-            spoonNode.name = "spoon"
+            // Enable physics on the racket node
+            let racketPhysicsBody = SCNPhysicsBody(type: .kinematic, shape: SCNPhysicsShape(node: racketNode))
+            racketNode.physicsBody = racketPhysicsBody
+            racketNode.name = "racket"
         }
 
-        @objc func moveBallAboveSpoon() {
+        @objc func moveBallAboveracket() {
             // Check if ballNode is not nil before removing it from the parent node
             if ballNode != nil {
                 ballNode.removeFromParentNode()
             }
 
-            // Spawn a new ball node on the spoon node
+            // Spawn a new ball node on the racket node
             let ballGeometry = SCNSphere(radius: ballRadius)
-            ballGeometry.firstMaterial?.diffuse.contents = UIColor.red
+            ballGeometry.firstMaterial?.diffuse.contents = UIColor.white
             ballNode = SCNNode(geometry: ballGeometry)
-            ballNode.position = SCNVector3(0, 0.1, -0.5) // Set the z-coordinate of the ball to -0.03
-            spoonNode.addChildNode(ballNode)
+            ballNode.position = SCNVector3(0, 0.1, -0.3) // Set the z-coordinate of the ball to -0.03
+            racketNode.addChildNode(ballNode)
 
             // Enable physics on the new ball node
             let ballPhysicsBody = SCNPhysicsBody(type: .dynamic, shape: SCNPhysicsShape(geometry: ballGeometry, options: nil))
@@ -81,13 +81,13 @@ struct ARSceneView: UIViewRepresentable {
         }
 
         func physicsWorld(_ world: SCNPhysicsWorld, didBegin contact: SCNPhysicsContact) {
-            if (contact.nodeA.name == "spoon" && contact.nodeB.name == "ball") ||
-                (contact.nodeA.name == "ball" && contact.nodeB.name == "spoon")
+            if (contact.nodeA.name == "racket" && contact.nodeB.name == "ball") ||
+                (contact.nodeA.name == "ball" && contact.nodeB.name == "racket")
             {
-                // Add some force to the ball node in the direction of the spoon node's z-axis
-                let force = SCNVector3(spoonNode.presentation.worldTransform.m31,
-                                       spoonNode.presentation.worldTransform.m32,
-                                       spoonNode.presentation.worldTransform.m33)
+                // Add some force to the ball node in the direction of the racket node's z-axis
+                let force = SCNVector3(racketNode.presentation.worldTransform.m31,
+                                       racketNode.presentation.worldTransform.m32,
+                                       racketNode.presentation.worldTransform.m33)
 
                 let position = SCNVector3(contact.contactPoint.x, contact.contactPoint.y, contact.contactPoint.z)
                 ballNode.physicsBody?.applyForce(force, at: position, asImpulse: true)
@@ -95,12 +95,12 @@ struct ARSceneView: UIViewRepresentable {
         }
 
         @objc func handlePanGesture(_ gestureRecognizer: UIPanGestureRecognizer) {
-            // Move the spoon node along the x and y axes based on the pan gesture
+            // Move the racket node along the x and y axes based on the pan gesture
             let translation = gestureRecognizer.translation(in: gestureRecognizer.view!)
-            var newPosition = spoonNode.position
+            var newPosition = racketNode.position
             newPosition.x += Float(translation.x) / 100
             newPosition.y -= Float(translation.y) / 100
-            spoonNode.position = newPosition
+            racketNode.position = newPosition
             gestureRecognizer.setTranslation(CGPoint.zero, in: gestureRecognizer.view)
         }
     }
