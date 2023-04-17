@@ -213,7 +213,7 @@ struct ARSceneView: UIViewRepresentable {
 }
 
 struct ContentView: View {
-    @State private var showHelp = false
+    @State private var showHelp = true
 
     var body: some View {
         ZStack {
