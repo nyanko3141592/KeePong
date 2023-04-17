@@ -104,18 +104,22 @@ struct ARSceneView: UIViewRepresentable {
             // Remove the ball from the scene
             ballNode.removeFromParentNode()
 
-            var message = resultMessage(seconds: elapsedSeconds / 10)
+            let message = resultMessage(seconds: elapsedSeconds / 10)
 
             // Show an alert message
             let alertController = UIAlertController(title: "Your Score: \(elapsedSeconds)",
                                                     message: message, preferredStyle: .alert)
             alertController.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
-            UIApplication.shared.windows.first?.rootViewController?.present(alertController, animated: true, completion: nil)
+            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+               let rootViewController = windowScene.windows.first?.rootViewController
+            {
+                rootViewController.present(alertController, animated: true, completion: nil)
+            }
 
             // Reset the elapsed time and update the stopwatch label
             elapsedSeconds = 0
             updateStopwatchLabel()
-            self.sceneView.playSound()
+            sceneView.playSound()
         }
 
         func resultMessage(seconds: Int) -> String {
