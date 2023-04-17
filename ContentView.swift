@@ -187,6 +187,87 @@ struct ARSceneView: UIViewRepresentable {
     }
 }
 
-struct ContentView: View { var body: some View { ARSceneView().edgesIgnoringSafeArea(.all) } }
+struct ContentView: View {
+    @State private var showHelp = false
+
+    var body: some View {
+        ZStack {
+            // Your ARSceneView
+            ARSceneView()
+
+            // Help button
+            VStack {
+                HStack {
+                    Spacer()
+                    Button(action: {
+                        showHelp = true
+                    }, label: {
+                        Image(systemName: "questionmark.circle.fill")
+                            .font(.system(size: 30))
+                            .foregroundColor(.white)
+                            .padding()
+                    })
+                    .background(Color.blue)
+                    .cornerRadius(20)
+                    .padding()
+                }
+                Spacer()
+            }
+        }
+        .edgesIgnoringSafeArea(.all)
+        .sheet(isPresented: $showHelp, content: {
+            HelpOverlayView(showHelp: $showHelp)
+        })
+    }
+}
+
+struct HelpOverlayView: View {
+    @Binding var showHelp: Bool
+
+    var body: some View {
+        ZStack {
+            List {
+                Image(uiImage: #imageLiteral(resourceName: "title.PNG"))
+                    .resizable()
+                    .scaledToFit()
+                Section(header: Text("How to Play").font(.title)) {
+                    Text("Hold the device vertically from the ground with both hands. The racket visible on the screen will move in sync with the device.")
+                    Text("Press the play button to start the game. Ping pong balls will fall down.")
+                    Text("While tilting the device, try to maintain a good balance. The higher the score, the longer you can avoid dropping the balls.")
+                }
+
+                Section(header: Text("Why this App was Created").font(.title)) {
+                    Text("My grandmother developed dementia this year. Her decline in motor skills and lack of balance are also due to aging, and she suffered a major injury two years ago. I hope this app will help improve her concentration and balance even a little bit. My grandmother's score is 1 minute and 10 seconds.")
+                }
+                Section(header: Text("Application Information").font(.title)) {
+                    Text("Author: Naoki Takahashi")
+                }
+                Image(uiImage: #imageLiteral(resourceName: "icons.PNG"))
+                    .resizable()
+                    .scaledToFit()
+            }
+            .listStyle(InsetGroupedListStyle())
+
+            VStack {
+                HStack {
+                    Spacer()
+                    // Add a close button
+                    Button(action: {
+                        showHelp = false
+                    }, label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 30))
+                            .foregroundColor(.gray)
+                    })
+                    .padding(.trailing, 20)
+                    .padding(.top, 50)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                }
+                Spacer()
+            }
+        }
+        .edgesIgnoringSafeArea(.all)
+    }
+}
 
 struct ContentView_Previews: PreviewProvider { static var previews: some View { ContentView() } }
