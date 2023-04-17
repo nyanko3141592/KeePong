@@ -62,8 +62,10 @@ struct ARSceneView: UIViewRepresentable {
         }
 
         @objc func moveBallAboveSpoon() {
-            // Remove the current ball node from the scene
-            ballNode.removeFromParentNode()
+            // Check if ballNode is not nil before removing it from the parent node
+            if ballNode != nil {
+                ballNode.removeFromParentNode()
+            }
 
             // Spawn a new ball node on the spoon node
             let ballGeometry = SCNSphere(radius: ballRadius)
