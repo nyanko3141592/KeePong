@@ -8,13 +8,13 @@ import PackageDescription
 import AppleProductTypes
 
 let package = Package(
-    name: "KeepPingPong",
+    name: "KeePong",
     platforms: [
         .iOS("15.2")
     ],
     products: [
         .iOSApplication(
-            name: "KeepPingPong",
+            name: "KeePong",
             targets: ["AppModule"],
             bundleIdentifier: "naoki.takahashi.balanceGameAR",
             teamIdentifier: "CW97U5J24N",
