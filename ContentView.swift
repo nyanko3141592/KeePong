@@ -2,6 +2,7 @@ import ARKit
 import SwiftUI
 
 struct ARSceneView: UIViewRepresentable {
+    let playbutton = UIButton(type: .system)
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
     }
@@ -13,8 +14,7 @@ struct ARSceneView: UIViewRepresentable {
         sceneView.showsStatistics = true
 
         // add play button
-        let playbutton = UIButton(type: .system)
-        playbutton.backgroundColor = .blue
+        playbutton.backgroundColor = .systemRed
         playbutton.setTitle("Play", for: .normal)
         playbutton.setTitleColor(.white, for: .normal)
         playbutton.titleLabel?.font = UIFont.boldSystemFont(ofSize: 30)
@@ -27,7 +27,7 @@ struct ARSceneView: UIViewRepresentable {
         // add stopwatch label
         let stopwatchLabel = UILabel()
         stopwatchLabel.textColor = .white
-        stopwatchLabel.font = UIFont.systemFont(ofSize: 30)
+        stopwatchLabel.font = UIFont.systemFont(ofSize: 50)
         stopwatchLabel.textAlignment = .center
         stopwatchLabel.translatesAutoresizingMaskIntoConstraints = false
         sceneView.addSubview(stopwatchLabel)
@@ -99,21 +99,39 @@ struct ARSceneView: UIViewRepresentable {
             stopwatchTimer?.invalidate()
             stopwatchTimer = nil
 
-            // Reset the elapsed time and update the stopwatch label
-            elapsedSeconds = 0
-            updateStopwatchLabel()
-
             // Remove the ball from the scene
             ballNode.removeFromParentNode()
 
+            var message = resultMessage(seconds: elapsedSeconds / 10)
+
             // Show an alert message
-            let alertController = UIAlertController(title: "Game Over", message: "You dropped the ball!", preferredStyle: .alert)
+            let alertController = UIAlertController(title: "Your Score: \(elapsedSeconds)",
+                                                    message: message, preferredStyle: .alert)
             alertController.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
             UIApplication.shared.windows.first?.rootViewController?.present(alertController, animated: true, completion: nil)
+
+            // Reset the elapsed time and update the stopwatch label
+            elapsedSeconds = 0
+            updateStopwatchLabel()
         }
 
-        @objc func moveBallAboveracket() {
-            print("move ball above")
+        func resultMessage(seconds: Int) -> String {
+            if seconds < 5 {
+                return "Nice try!"
+            } else if seconds < 10 {
+                return "Good Score!"
+            } else if seconds < 20 {
+                return "Excellent Work!"
+            } else if seconds < 30 {
+                return "wonderful!!"
+            } else if seconds < 50 {
+                return "Awesome!"
+            } else {
+                return "Brilliant!!"
+            }
+        }
+
+        @objc func moveBallAboveracket(_ sender: UIButton) {
             // Check if ballNode is not nil before removing it from the parent node
             if ballNode != nil {
                 ballNode.removeFromParentNode()
@@ -135,21 +153,22 @@ struct ARSceneView: UIViewRepresentable {
                 stopwatchTimer!.invalidate()
                 elapsedSeconds = 0
             }
-            stopwatchTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
+            stopwatchTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
                 self.elapsedSeconds += 1
                 self.updateStopwatchLabel()
                 // Check if the ball has dropped
                 if self.ballNode.presentation.position.y < self.racketNode.presentation.position.y + 0.2 {
                     self.stopStopwatch()
-                    print("Ball dropped!")
+                    self.ballDropped()
                 }
             }
         }
 
         func updateStopwatchLabel() {
-            let minutes = elapsedSeconds / 60
-            let seconds = elapsedSeconds % 60
-            stopwatchLabel.text = String(format: "%02d:%02d", minutes, seconds)
+            let minutes = (elapsedSeconds / 10) / 60
+            let seconds = (elapsedSeconds / 10) % 60
+            let comma = elapsedSeconds - seconds * 10 - minutes * 600
+            stopwatchLabel.text = String(format: "%02d:%02d.%0d", minutes, seconds, comma)
         }
 
         // Physics contact delegate method to detect when the ball is dropped
