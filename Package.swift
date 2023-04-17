@@ -20,8 +20,8 @@ let package = Package(
             teamIdentifier: "CW97U5J24N",
             displayVersion: "1.0",
             bundleVersion: "1",
-            appIcon: .placeholder(icon: .sparkle),
-            accentColor: .presetColor(.teal),
+            appIcon: .asset("AppIcon"),
+            accentColor: .presetColor(.pink),
             supportedDeviceFamilies: [
                 .pad,
                 .phone
@@ -34,10 +34,10 @@ let package = Package(
             ],
             capabilities: [
                 .camera(purposeString: "aa"),
-                .fileAccess(.pictureFolder, mode: .readOnly),
-                .fileAccess(.downloadsFolder, mode: .readOnly),
                 .fileAccess(.moviesFolder, mode: .readOnly),
-                .fileAccess(.userSelectedFiles, mode: .readOnly)
+                .fileAccess(.pictureFolder, mode: .readOnly),
+                .fileAccess(.userSelectedFiles, mode: .readOnly),
+                .fileAccess(.downloadsFolder, mode: .readOnly)
             ]
         )
     ],
