@@ -40,7 +40,7 @@ struct ARSceneView: UIViewRepresentable {
     class Coordinator: NSObject, ARSCNViewDelegate {
         var sceneView: ARSceneView
         var spoonNode: SCNNode!
-        var spoonNode: SCNNode!
+        let ballRadius: CGFloat = 0.20
         var ballNode: SCNNode!
 
         init(_ sceneView: ARSceneView) {
@@ -67,7 +67,7 @@ struct ARSceneView: UIViewRepresentable {
             ballNode.removeFromParentNode()
 
             // Spawn a new ball node on the spoon node
-            let ballGeometry = SCNSphere(radius: 0.12)
+            let ballGeometry = SCNSphere(radius: ballRadius)
             ballGeometry.firstMaterial?.diffuse.contents = UIColor.red
             ballNode = SCNNode(geometry: ballGeometry)
             ballNode.position = SCNVector3(0, 0.1, -0.5) // Set the z-coordinate of the ball to -0.03
