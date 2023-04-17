@@ -12,9 +12,19 @@ struct ARSceneView: UIViewRepresentable {
         sceneView.autoenablesDefaultLighting = true
         sceneView.showsStatistics = true
 
-        // Add a pan gesture recognizer to the scene view
-        let panGestureRecognizer = UIPanGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handlePanGesture(_:)))
-        sceneView.addGestureRecognizer(panGestureRecognizer)
+        // Add a button to move the ball above the spoon
+        let button = UIButton(type: .system)
+        button.backgroundColor = .blue
+        button.setTitle("Move Ball", for: .normal)
+        button.addTarget(context.coordinator, action: #selector(Coordinator.moveBallAboveSpoon), for: .touchUpInside)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        sceneView.addSubview(button)
+
+        // Add constraints to center the button horizontally and position it at the bottom of the view
+        NSLayoutConstraint.activate([
+            button.centerXAnchor.constraint(equalTo: sceneView.centerXAnchor),
+            button.bottomAnchor.constraint(equalTo: sceneView.bottomAnchor, constant: -20)
+        ])
 
         return sceneView
     }
@@ -29,8 +39,7 @@ struct ARSceneView: UIViewRepresentable {
 
     class Coordinator: NSObject, ARSCNViewDelegate {
         var sceneView: ARSceneView
-
-        // Add properties for the spoon and ball nodes
+        var spoonNode: SCNNode!
         var spoonNode: SCNNode!
         var ballNode: SCNNode!
 
@@ -39,10 +48,10 @@ struct ARSceneView: UIViewRepresentable {
         }
 
         func setupSpoon(sceneView: ARSCNView) {
-            let spoonScene = try! SCNScene(url: Bundle.main.url(forResource: "spoonModel", withExtension: "usdz")!)
-            spoonNode = spoonScene.rootNode.childNodes.first!
+            let spoon1Scene = try! SCNScene(url: Bundle.main.url(forResource: "spoonModel", withExtension: "usdz")!)
+            spoonNode = spoon1Scene.rootNode.childNodes.first!
 
-            spoonNode.position = SCNVector3(0, -0.1, -0.8)
+            spoonNode.position = SCNVector3(0, -0.3, -0.8)
             spoonNode.eulerAngles = SCNVector3(GLKMathDegreesToRadians(0), 0, 0)
 
             sceneView.pointOfView?.addChildNode(spoonNode)
@@ -53,16 +62,34 @@ struct ARSceneView: UIViewRepresentable {
             spoonNode.name = "spoon"
         }
 
-        func setupBall(sceneView: ARSCNView) {
-            let ballGeometry = SCNSphere(radius: 0.03)
+        @objc func moveBallAboveSpoon() {
+            // Remove the current ball node from the scene
+            ballNode.removeFromParentNode()
+
+            // Spawn a new ball node on the spoon node
+            let ballGeometry = SCNSphere(radius: 0.12)
             ballGeometry.firstMaterial?.diffuse.contents = UIColor.red
             ballNode = SCNNode(geometry: ballGeometry)
+            ballNode.position = SCNVector3(0, 0.1, -0.5) // Set the z-coordinate of the ball to -0.03
+            spoonNode.addChildNode(ballNode)
 
-            ballNode.position = SCNVector3(0, 0, -1)
+            // Enable physics on the new ball node
+            let ballPhysicsBody = SCNPhysicsBody(type: .dynamic, shape: SCNPhysicsShape(geometry: ballGeometry, options: nil))
+            ballNode.physicsBody = ballPhysicsBody
+            ballNode.name = "ball"
+        }
 
-            sceneView.scene.rootNode.addChildNode(ballNode)
+        func setupBall(sceneView: ARSCNView) {
+            // Remove the current ball node from the scene
 
-            // Enable physics on the ball node
+            // Spawn a new ball node on the spoon node
+            let ballGeometry = SCNSphere(radius: 0.12)
+            ballGeometry.firstMaterial?.diffuse.contents = UIColor.red
+            ballNode = SCNNode(geometry: ballGeometry)
+            ballNode.position = SCNVector3(0, 0.1, -0.5) // Set the z-coordinate of the ball to -0.03
+            spoonNode.addChildNode(ballNode)
+
+            // Enable physics on the new ball node
             let ballPhysicsBody = SCNPhysicsBody(type: .dynamic, shape: SCNPhysicsShape(geometry: ballGeometry, options: nil))
             ballNode.physicsBody = ballPhysicsBody
             ballNode.name = "ball"
