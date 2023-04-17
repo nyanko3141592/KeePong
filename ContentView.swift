@@ -34,7 +34,6 @@ struct ARSceneView: UIViewRepresentable {
         uiView.session.run(configuration)
 
         context.coordinator.setupSpoon(sceneView: uiView)
-        context.coordinator.setupBall(sceneView: uiView)
     }
 
     class Coordinator: NSObject, ARSCNViewDelegate {
@@ -68,22 +67,6 @@ struct ARSceneView: UIViewRepresentable {
 
             // Spawn a new ball node on the spoon node
             let ballGeometry = SCNSphere(radius: ballRadius)
-            ballGeometry.firstMaterial?.diffuse.contents = UIColor.red
-            ballNode = SCNNode(geometry: ballGeometry)
-            ballNode.position = SCNVector3(0, 0.1, -0.5) // Set the z-coordinate of the ball to -0.03
-            spoonNode.addChildNode(ballNode)
-
-            // Enable physics on the new ball node
-            let ballPhysicsBody = SCNPhysicsBody(type: .dynamic, shape: SCNPhysicsShape(geometry: ballGeometry, options: nil))
-            ballNode.physicsBody = ballPhysicsBody
-            ballNode.name = "ball"
-        }
-
-        func setupBall(sceneView: ARSCNView) {
-            // Remove the current ball node from the scene
-
-            // Spawn a new ball node on the spoon node
-            let ballGeometry = SCNSphere(radius: 0.12)
             ballGeometry.firstMaterial?.diffuse.contents = UIColor.red
             ballNode = SCNNode(geometry: ballGeometry)
             ballNode.position = SCNVector3(0, 0.1, -0.5) // Set the z-coordinate of the ball to -0.03
