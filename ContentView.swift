@@ -1,7 +1,9 @@
 import ARKit
+import AVFoundation
 import SwiftUI
 
 struct ARSceneView: UIViewRepresentable {
+    var player: AVAudioPlayer?
     let playbutton = UIButton(type: .system)
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
@@ -113,6 +115,7 @@ struct ARSceneView: UIViewRepresentable {
             // Reset the elapsed time and update the stopwatch label
             elapsedSeconds = 0
             updateStopwatchLabel()
+            self.sceneView.playSound()
         }
 
         func resultMessage(seconds: Int) -> String {
@@ -183,6 +186,24 @@ struct ARSceneView: UIViewRepresentable {
         func stopStopwatch() {
             stopwatchTimer?.invalidate()
             stopwatchTimer = nil
+        }
+    }
+
+    mutating func playSound() {
+        guard let url = Bundle.main.url(forResource: "fanfare", withExtension: "mp3") else { return }
+
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+            try AVAudioSession.sharedInstance().setActive(true)
+
+            player = try AVAudioPlayer(contentsOf: url, fileTypeHint: AVFileType.mp3.rawValue)
+
+            guard let player = player else { return }
+
+            player.play()
+
+        } catch {
+            print(error.localizedDescription)
         }
     }
 }
