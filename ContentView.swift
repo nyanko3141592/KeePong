@@ -16,6 +16,10 @@ struct ARSceneView: UIViewRepresentable {
         let button = UIButton(type: .system)
         button.backgroundColor = .blue
         button.setTitle("Play", for: .normal)
+        button.setTitleColor(.white, for: .normal)
+        button.titleLabel?.font = UIFont.boldSystemFont(ofSize: 24)
+        button.layer.cornerRadius = 15
+        button.contentEdgeInsets = UIEdgeInsets(top: 12, left: 32, bottom: 12, right: 32)
         button.addTarget(context.coordinator, action: #selector(Coordinator.moveBallAboveracket), for: .touchUpInside)
         button.translatesAutoresizingMaskIntoConstraints = false
         sceneView.addSubview(button)
@@ -71,7 +75,7 @@ struct ARSceneView: UIViewRepresentable {
             let ballGeometry = SCNSphere(radius: ballRadius)
             ballGeometry.firstMaterial?.diffuse.contents = UIColor.white
             ballNode = SCNNode(geometry: ballGeometry)
-            ballNode.position = SCNVector3(0, 0.1, -0.3) // Set the z-coordinate of the ball to -0.03
+            ballNode.position = SCNVector3(0, 0.2, -0.3) // Set the z-coordinate of the ball to -0.03
             racketNode.addChildNode(ballNode)
 
             // Enable physics on the new ball node
