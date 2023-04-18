@@ -44,6 +44,7 @@ struct ARSceneView: UIViewRepresentable {
         ])
 
         context.coordinator.liftingCountLabel = stopwatchLabel // set the label as a property of the coordinator
+        context.coordinator.playButton = playbutton
 
         return sceneView
     }
@@ -68,9 +69,16 @@ struct ARSceneView: UIViewRepresentable {
         var contactSoundPlayer: AVAudioPlayer?
         var contactCounted: Bool = false
         var resultLabel: UILabel!
+        var isPlaying: Bool = false
+        var playButton: UIButton?
 
         init(_ sceneView: ARSceneView) {
             self.sceneView = sceneView
+        }
+
+        func togglePlayingState() {
+            isPlaying.toggle()
+            playButton?.isHidden = isPlaying
         }
 
         func loadContactSound() {
@@ -141,6 +149,7 @@ struct ARSceneView: UIViewRepresentable {
             elapsedSeconds = 0
             updateStopwatchLabel()
             sceneView.playSound(file_name: "end")
+            togglePlayingState() // show the Play button
         }
 
         func resultMessage(count: Int) -> String {
@@ -161,6 +170,7 @@ struct ARSceneView: UIViewRepresentable {
 
         @objc func moveBallAboveracket(_ sender: UIButton) {
             liftingCound = 0
+            togglePlayingState() // hide the Play button
 
             // Check if ballNode is not nil before removing it from the parent node
             if ballNode != nil {
