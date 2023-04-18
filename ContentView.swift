@@ -30,7 +30,7 @@ struct ARSceneView: UIViewRepresentable {
         // add stopwatch label
         let stopwatchLabel = UILabel()
         stopwatchLabel.textColor = .white
-        stopwatchLabel.font = UIFont.systemFont(ofSize: 100)
+        stopwatchLabel.font = UIFont.systemFont(ofSize: 80)
         stopwatchLabel.textAlignment = .center
         stopwatchLabel.translatesAutoresizingMaskIntoConstraints = false
         sceneView.addSubview(stopwatchLabel)
@@ -40,7 +40,7 @@ struct ARSceneView: UIViewRepresentable {
             playbutton.centerXAnchor.constraint(equalTo: sceneView.rightAnchor, constant: -60),
             playbutton.centerYAnchor.constraint(equalTo: sceneView.centerYAnchor),
             stopwatchLabel.centerXAnchor.constraint(equalTo: sceneView.centerXAnchor),
-            stopwatchLabel.topAnchor.constraint(equalTo: sceneView.topAnchor, constant: 20)
+            stopwatchLabel.topAnchor.constraint(equalTo: sceneView.topAnchor, constant: 50)
         ])
 
         context.coordinator.liftingCountLabel = stopwatchLabel // set the label as a property of the coordinator
@@ -71,6 +71,9 @@ struct ARSceneView: UIViewRepresentable {
         var resultLabel: UILabel!
         var isPlaying: Bool = false
         var playButton: UIButton?
+        let highestScoreKey = "highestScore"
+        var highestScore: Int = 0
+        var highestScoreLabel: UILabel!
 
         init(_ sceneView: ARSceneView) {
             self.sceneView = sceneView
@@ -141,14 +144,23 @@ struct ARSceneView: UIViewRepresentable {
             // Remove the ball from the scene
             ballNode.removeFromParentNode()
 
+            // Update the highest score
+            if liftingCound > highestScore {
+                highestScore = liftingCound
+                UserDefaults.standard.set(highestScore, forKey: highestScoreKey)
+                sceneView.playSound(file_name: "fanfare_wa")
+            } else {
+                sceneView.playSound(file_name: "end")
+            }
+
             // Show the result label
-            resultLabel.text = "Your Score: \(liftingCound)\n\(resultMessage(count: liftingCound))"
+            resultLabel.text = "Your Score: \(liftingCound)\nHighScore: \(highestScore)\n\n\(resultMessage(count: liftingCound))"
             resultLabel.isHidden = false
 
             // Reset the elapsed time and update the stopwatch label
             elapsedSeconds = 0
             updateStopwatchLabel()
-            sceneView.playSound(file_name: "end")
+
             togglePlayingState() // show the Play button
         }
 
@@ -169,6 +181,9 @@ struct ARSceneView: UIViewRepresentable {
         }
 
         @objc func moveBallAboveracket(_ sender: UIButton) {
+            highestScore = UserDefaults.standard.integer(forKey: highestScoreKey)
+            print("highest score: \(highestScore)")
+
             liftingCound = 0
             togglePlayingState() // hide the Play button
 
@@ -299,13 +314,16 @@ struct HelpOverlayView: View {
                     .resizable()
                     .scaledToFit()
                 Section(header: Text("How to Play").font(.title)) {
-                    Text("Hold the device vertically from the ground with both hands. The racket visible on the screen will move in sync with the device.")
-                    Text("Press the play button to start the game. Ping pong balls will fall down.")
-                    Text("While tilting the device, try to maintain a good balance. The higher the score, the longer you can avoid dropping the balls.")
+                    Text("1. Hold the device vertically from the ground with both hands. The racket visible on the screen will move in sync with the device.")
+                    Image(uiImage: #imageLiteral(resourceName: "hold.jpeg"))
+                        .resizable()
+                        .scaledToFit()
+                    Text("2. Press the play button to start the game. Ping pong balls will fall down.")
+                    Text("3. Move your device to get a high score for your number of lifts.")
                 }
 
                 Section(header: Text("Why this App was Created").font(.title)) {
-                    Text("My grandmother developed dementia this year. Her decline in motor skills and lack of balance are also due to aging, and she suffered a major injury two years ago. I hope this app will help improve her concentration and balance even a little bit. My grandmother's score is 1 minute and 10 seconds.")
+                    Text("My grandmother developed dementia this year. Her decline in motor skills and lack of balance are also due to aging, and she suffered a major injury two years ago. I hope this app will help improve her concentration and balance even a little bit. My grandmother's score is 23 times.")
                 }
                 Section(header: Text("Application Information").font(.title)) {
                     Text("Author: Naoki Takahashi")
@@ -328,7 +346,7 @@ struct HelpOverlayView: View {
                             .foregroundColor(.gray)
                     })
                     .padding(.trailing, 20)
-                    .padding(.top, 50)
+                    .padding(.top, 70)
                     .frame(maxWidth: .infinity, alignment: .trailing)
                 }
                 Spacer()
