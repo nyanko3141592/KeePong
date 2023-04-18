@@ -4,7 +4,8 @@ import SwiftUI
 
 struct ARSceneView: UIViewRepresentable {
     var player: AVAudioPlayer?
-    let playbutton = UIButton(type: .system)
+    var playerpingPong: AVAudioPlayer?
+
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
     }
@@ -15,8 +16,10 @@ struct ARSceneView: UIViewRepresentable {
         sceneView.autoenablesDefaultLighting = true
         sceneView.showsStatistics = true
 
+        // add play button
+        let playbutton = UIButton(type: .system)
         playbutton.backgroundColor = .systemRed
-        playbutton.setTitle("    Play    ", for: .normal)
+        playbutton.setTitle("  Play  ", for: .normal)
         playbutton.setTitleColor(.white, for: .normal)
         playbutton.titleLabel?.font = UIFont.boldSystemFont(ofSize: 30)
         playbutton.layer.cornerRadius = 15
@@ -27,20 +30,20 @@ struct ARSceneView: UIViewRepresentable {
         // add stopwatch label
         let stopwatchLabel = UILabel()
         stopwatchLabel.textColor = .white
-        stopwatchLabel.font = UIFont.systemFont(ofSize: 50)
+        stopwatchLabel.font = UIFont.systemFont(ofSize: 100)
         stopwatchLabel.textAlignment = .center
         stopwatchLabel.translatesAutoresizingMaskIntoConstraints = false
         sceneView.addSubview(stopwatchLabel)
 
         // Add constraints to center the button horizontally and position it at the bottom of the view
         NSLayoutConstraint.activate([
-            playbutton.centerXAnchor.constraint(equalTo: sceneView.centerXAnchor),
-            playbutton.bottomAnchor.constraint(equalTo: sceneView.bottomAnchor, constant: -20),
+            playbutton.centerXAnchor.constraint(equalTo: sceneView.rightAnchor, constant: -60),
+            playbutton.centerYAnchor.constraint(equalTo: sceneView.centerYAnchor),
             stopwatchLabel.centerXAnchor.constraint(equalTo: sceneView.centerXAnchor),
             stopwatchLabel.topAnchor.constraint(equalTo: sceneView.topAnchor, constant: 20)
         ])
 
-        context.coordinator.stopwatchLabel = stopwatchLabel // set the label as a property of the coordinator
+        context.coordinator.liftingCountLabel = stopwatchLabel // set the label as a property of the coordinator
 
         return sceneView
     }
@@ -57,13 +60,31 @@ struct ARSceneView: UIViewRepresentable {
         var racketNode: SCNNode!
         let ballRadius: CGFloat = 0.1
         var ballNode: SCNNode!
-        var stopwatchLabel: UILabel! // label to display the stopwatch time
+        var liftingCountLabel: UILabel! // label to display the stopwatch time
         var stopwatchTimer: Timer? // timer for the stopwatch
         var elapsedSeconds: Int = 0 // number of seconds elapsed on the stopwatch
+        var liftingCound: Int = 0 // number of seconds elapsed on the stopwatch
         var isBallDropped: Bool = false // flag to indicate if the ball has been dropped
+        var contactSoundPlayer: AVAudioPlayer?
+        var contactCounted: Bool = false
+        var resultLabel: UILabel!
 
         init(_ sceneView: ARSceneView) {
             self.sceneView = sceneView
+        }
+
+        func loadContactSound() {
+            guard let url = Bundle.main.url(forResource: "pingpong1", withExtension: "mp3") else { return }
+
+            do {
+                try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+                try AVAudioSession.sharedInstance().setActive(true)
+
+                contactSoundPlayer = try AVAudioPlayer(contentsOf: url, fileTypeHint: AVFileType.mp3.rawValue)
+                contactSoundPlayer?.prepareToPlay()
+            } catch {
+                print(error.localizedDescription)
+            }
         }
 
         func setupracket(sceneView: ARSCNView) {
@@ -80,18 +101,28 @@ struct ARSceneView: UIViewRepresentable {
             racketNode.physicsBody = racketPhysicsBody
             racketNode.name = "racket"
 
-            // Create a transparent ground
-            let groundGeometry = SCNPlane(width: 5, height: 5)
-            let groundMaterial = SCNMaterial()
-            groundMaterial.diffuse.contents = UIColor.clear
-            groundGeometry.materials = [groundMaterial]
-            let groundNode = SCNNode(geometry: groundGeometry)
-            groundNode.eulerAngles = SCNVector3(GLKMathDegreesToRadians(270), 0, 0)
-            groundNode.position = SCNVector3(0, -2, -1)
-            let groundPhysicsBody = SCNPhysicsBody(type: .static, shape: SCNPhysicsShape(geometry: groundGeometry, options: nil))
-            groundNode.physicsBody = groundPhysicsBody
-            groundNode.name = "ground"
-            sceneView.scene.rootNode.addChildNode(groundNode)
+            // Set the category and contact bitmasks for the racket physics body
+            racketPhysicsBody.categoryBitMask = 1
+            racketPhysicsBody.contactTestBitMask = 2
+
+            sceneView.scene.physicsWorld.contactDelegate = self
+
+            // Load the contact sound
+            loadContactSound()
+
+            // add result label
+            let resultLabel = UILabel()
+            resultLabel.textColor = .white
+            resultLabel.font = UIFont.boldSystemFont(ofSize: 50)
+            resultLabel.textAlignment = .center
+            resultLabel.numberOfLines = 0
+            resultLabel.translatesAutoresizingMaskIntoConstraints = false
+            sceneView.addSubview(resultLabel)
+            NSLayoutConstraint.activate([
+                resultLabel.centerXAnchor.constraint(equalTo: sceneView.centerXAnchor),
+                resultLabel.centerYAnchor.constraint(equalTo: sceneView.centerYAnchor)
+            ])
+            self.resultLabel = resultLabel
         }
 
         func ballDropped() {
@@ -102,34 +133,26 @@ struct ARSceneView: UIViewRepresentable {
             // Remove the ball from the scene
             ballNode.removeFromParentNode()
 
-            let message = resultMessage(seconds: elapsedSeconds / 10)
-
-            // Show an alert message
-            let alertController = UIAlertController(title: "Your Score: \(elapsedSeconds)",
-                                                    message: message, preferredStyle: .alert)
-            alertController.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
-            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-               let rootViewController = windowScene.windows.first?.rootViewController
-            {
-                rootViewController.present(alertController, animated: true, completion: nil)
-            }
+            // Show the result label
+            resultLabel.text = "Your Score: \(liftingCound)\n\(resultMessage(count: liftingCound))"
+            resultLabel.isHidden = false
 
             // Reset the elapsed time and update the stopwatch label
             elapsedSeconds = 0
             updateStopwatchLabel()
-            sceneView.playSound()
+            sceneView.playSound(file_name: "end")
         }
 
-        func resultMessage(seconds: Int) -> String {
-            if seconds < 5 {
+        func resultMessage(count: Int) -> String {
+            if count < 5 {
                 return "Nice try!"
-            } else if seconds < 10 {
+            } else if count < 10 {
                 return "Good Score!"
-            } else if seconds < 20 {
+            } else if count < 20 {
                 return "Excellent Work!"
-            } else if seconds < 30 {
+            } else if count < 30 {
                 return "wonderful!!"
-            } else if seconds < 50 {
+            } else if count < 50 {
                 return "Awesome!"
             } else {
                 return "Brilliant!!"
@@ -137,6 +160,8 @@ struct ARSceneView: UIViewRepresentable {
         }
 
         @objc func moveBallAboveracket(_ sender: UIButton) {
+            liftingCound = 0
+
             // Check if ballNode is not nil before removing it from the parent node
             if ballNode != nil {
                 ballNode.removeFromParentNode()
@@ -147,16 +172,21 @@ struct ARSceneView: UIViewRepresentable {
             ballGeometry.firstMaterial?.diffuse.contents = UIColor.white
             ballNode = SCNNode(geometry: ballGeometry)
             let ballPhysicsBody = SCNPhysicsBody(type: .dynamic, shape: SCNPhysicsShape(geometry: ballGeometry, options: nil))
-            ballPhysicsBody.restitution = 1 // Set the ball's bounciness
+            ballPhysicsBody.restitution = 2 // Set the ball's bounciness
             ballNode.physicsBody = ballPhysicsBody
-            ballNode.position = SCNVector3(0, 0.1, -0.3) // Set the z-coordinate of the ball to -0.03
+            ballNode.position = SCNVector3(0, 0.3, -0.3) // Set the z-coordinate of the ball to -0.03
             racketNode.addChildNode(ballNode)
             ballNode.name = "ball"
+
+            // Set the category and contact bitmasks for the ball physics body
+            ballPhysicsBody.categoryBitMask = 2
+            ballPhysicsBody.contactTestBitMask = 1
 
             // Start or reset the stopwatch timer
             if stopwatchTimer != nil {
                 stopwatchTimer!.invalidate()
                 elapsedSeconds = 0
+                liftingCound = 0
             }
             stopwatchTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
                 self.elapsedSeconds += 1
@@ -167,21 +197,26 @@ struct ARSceneView: UIViewRepresentable {
                     self.ballDropped()
                 }
             }
+            // Hide the result label
+            resultLabel.isHidden = true
         }
 
         func updateStopwatchLabel() {
-            let minutes = (elapsedSeconds / 10) / 60
-            let seconds = (elapsedSeconds / 10) % 60
-            let comma = elapsedSeconds - seconds * 10 - minutes * 600
-            stopwatchLabel.text = String(format: "%02d:%02d.%0d", minutes, seconds, comma)
+            liftingCountLabel.text = String(format: "\(liftingCound) times")
         }
 
-        // Physics contact delegate method to detect when the ball is dropped
         func physicsWorld(_ world: SCNPhysicsWorld, didBegin contact: SCNPhysicsContact) {
-            if contact.nodeA.name == "ball", contact.nodeB.name == "ground" {
-                stopStopwatch()
-            } else if contact.nodeA.name == "ground", contact.nodeB.name == "ball" {
-                stopStopwatch()
+            // Ball has hit the racket
+            contactSoundPlayer?.play()
+
+            if !contactCounted {
+                liftingCound += 1
+                print("Contacts: \(liftingCound)")
+                contactCounted = true
+
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    self.contactCounted = false
+                }
             }
         }
 
@@ -191,8 +226,8 @@ struct ARSceneView: UIViewRepresentable {
         }
     }
 
-    mutating func playSound() {
-        guard let url = Bundle.main.url(forResource: "fanfare", withExtension: "mp3") else { return }
+    mutating func playSound(file_name: String) {
+        guard let url = Bundle.main.url(forResource: file_name, withExtension: "mp3") else { return }
 
         do {
             try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
