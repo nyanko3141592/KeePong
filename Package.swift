@@ -33,7 +33,7 @@ let package = Package(
                 .portraitUpsideDown(.when(deviceFamilies: [.pad]))
             ],
             capabilities: [
-                .camera(purposeString: "aa"),
+                .camera(purposeString: "Use for AR camera"),
                 .fileAccess(.moviesFolder, mode: .readOnly),
                 .fileAccess(.pictureFolder, mode: .readOnly),
                 .fileAccess(.userSelectedFiles, mode: .readOnly),

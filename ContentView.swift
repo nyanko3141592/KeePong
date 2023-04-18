@@ -15,13 +15,11 @@ struct ARSceneView: UIViewRepresentable {
         sceneView.autoenablesDefaultLighting = true
         sceneView.showsStatistics = true
 
-        // add play button
         playbutton.backgroundColor = .systemRed
-        playbutton.setTitle("Play", for: .normal)
+        playbutton.setTitle("    Play    ", for: .normal)
         playbutton.setTitleColor(.white, for: .normal)
         playbutton.titleLabel?.font = UIFont.boldSystemFont(ofSize: 30)
         playbutton.layer.cornerRadius = 15
-        playbutton.contentEdgeInsets = UIEdgeInsets(top: 12, left: 32, bottom: 12, right: 32)
         playbutton.addTarget(context.coordinator, action: #selector(Coordinator.moveBallAboveracket), for: .touchUpInside)
         playbutton.translatesAutoresizingMaskIntoConstraints = false
         sceneView.addSubview(playbutton)
