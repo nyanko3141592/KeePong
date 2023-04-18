@@ -319,7 +319,7 @@ struct HelpOverlayView: View {
                         .resizable()
                         .scaledToFit()
                     Text("2. Press the play button to start the game. Ping pong balls will fall down.")
-                    Text("3. Move your device to get a high score for your number of lifts.")
+                    Text("3. Move your device to move the AR racket and juggle ping pong balls")
                 }
 
                 Section(header: Text("Why this App was Created").font(.title)) {
