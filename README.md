@@ -1,4 +1,4 @@
-# KeePong.swiftpm
+# KeePong
 
 Ping-pong juggling app
 Swift Student Challenge 2023 application (Accepted)
